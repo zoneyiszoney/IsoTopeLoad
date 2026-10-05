@@ -1,3 +1,5 @@
+-- Modern Glass UI (Clean Menu Library Edition) • v2.7
+-- Complete Mobile & PC Compatibility • Advanced Customization • Power Features
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -434,17 +436,50 @@ function IsoTopeUI:CreateWindow(config)
 		end
 	end
 
+	local function updateCategorySize(name)
+		name = name or activeCategory
+		if not name then return end
+		local frame = CategoryFrames[name]
+		if not frame then return end
+		local layout = frame:FindFirstChildOfClass("UIListLayout")
+
+		local function refresh()
+			if activeCategory ~= name then return end
+			local h = (layout and layout.AbsoluteContentSize.Y) or 0
+			if h <= 20 then
+				local manualH = 0
+				for _, ch in ipairs(frame:GetChildren()) do
+					if ch:IsA("GuiObject") and ch.Visible ~= false then
+						local chH = (ch.Size.Y.Offset > 0 and ch.Size.Y.Offset) or (ch.AbsoluteSize.Y > 0 and ch.AbsoluteSize.Y) or 58
+						manualH = manualH + chH + (layout and layout.Padding.Offset or 7)
+					end
+				end
+				if manualH > h then h = manualH end
+			end
+			if h > 0 then
+				CategoryHost.Size = UDim2.new(1, -4, 0, h + 24)
+				Content.CanvasSize = UDim2.new(0, 0, 0, h + 44)
+			end
+		end
+
+		refresh()
+		task.defer(refresh)
+		task.delay(0.03, refresh)
+		task.delay(0.1, refresh)
+		task.delay(0.25, refresh)
+	end
+
 	local function selectCategory(name)
+		if not CategoryFrames[name] then
+			name = "Home"
+		end
 		activeCategory = name
 		for categoryName, frame in pairs(CategoryFrames) do
 			frame.Visible = (categoryName == activeCategory)
 		end
-		local layout = CategoryFrames[activeCategory] and CategoryFrames[activeCategory]:FindFirstChildOfClass("UIListLayout")
-		if layout then
-			CategoryHost.Size = UDim2.new(1, -4, 0, layout.AbsoluteContentSize.Y + 8)
-		end
 		Content.CanvasPosition = Vector2.zero
 		updateTabVisuals()
+		updateCategorySize(name)
 	end
 
 	local function createSectionTitle(parent, text)
@@ -453,7 +488,7 @@ function IsoTopeUI:CreateWindow(config)
 		label.BackgroundTransparency = 1
 		label.Text = string.upper(text)
 		label.TextColor3 = THEME.sub
-		label.TextSize = 8
+		label.TextSize = 10
 		label.Font = Enum.Font.GothamBold
 		label.TextXAlignment = Enum.TextXAlignment.Left
 		return label
@@ -465,6 +500,8 @@ function IsoTopeUI:CreateWindow(config)
 		card.BackgroundColor3 = THEME.card
 		card.BackgroundTransparency = UI.CardTransparency
 		card.BorderSizePixel = 0
+		card.Active = false
+		card.ZIndex = 5
 		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 11)
 
 		local s = Instance.new("UIStroke", card)
@@ -481,23 +518,25 @@ function IsoTopeUI:CreateWindow(config)
 		Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
 
 		local n = Instance.new("TextLabel", card)
-		n.Size = UDim2.new(0.60, 0, 0, 19)
+		n.Name = "Title"
+		n.Size = UDim2.new(0.56, 0, 0, 19)
 		n.Position = UDim2.fromOffset(15, 8)
 		n.BackgroundTransparency = 1
 		n.Text = name
 		n.TextColor3 = THEME.text
-		n.TextSize = 11
-		n.Font = Enum.Font.GothamMedium
+		n.TextSize = 12
+		n.Font = Enum.Font.GothamBold
 		n.TextXAlignment = Enum.TextXAlignment.Left
 
 		local d = Instance.new("TextLabel", card)
-		d.Size = UDim2.new(0.64, 0, 0, 16)
+		d.Name = "Desc"
+		d.Size = UDim2.new(0.58, 0, 0, 16)
 		d.Position = UDim2.fromOffset(15, 29)
 		d.BackgroundTransparency = 1
 		d.Text = desc or ""
 		d.TextColor3 = THEME.sub
-		d.TextSize = 8
-		d.Font = Enum.Font.Gotham
+		d.TextSize = 10
+		d.Font = Enum.Font.GothamBold
 		d.TextXAlignment = Enum.TextXAlignment.Left
 
 		styleCards[#styleCards + 1] = card
@@ -529,12 +568,14 @@ function IsoTopeUI:CreateWindow(config)
 		Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
 		local hit = Instance.new("TextButton", holder)
+		hit.Active = true
+		hit.ZIndex = 30
 		hit.Size = UDim2.fromScale(1, 1)
 		hit.BackgroundTransparency = 1
 		hit.Text = ""
 		hit.AutoButtonColor = false
 
-		local state = initial
+		local state = initial == true
 		local function update()
 			local targetPos = state and UDim2.new(1, -23, 0, 3) or UDim2.fromOffset(3, 3)
 			local targetColor = state and THEME.accent or Color3.fromRGB(54, 62, 76)
@@ -562,8 +603,8 @@ function IsoTopeUI:CreateWindow(config)
 
 	local function makeInput(card, default, placeholder, callback)
 		local box = Instance.new("TextBox", card)
-		box.Size = UDim2.fromOffset(88, 28)
-		box.Position = UDim2.new(1, -102, 0.5, -14)
+		box.Size = UDim2.fromOffset(82, 28)
+		box.Position = UDim2.new(1, -96, 0.5, -14)
 		box.BackgroundColor3 = THEME.control
 		box.BackgroundTransparency = 0.12
 		box.Text = tostring(default or "")
@@ -573,6 +614,18 @@ function IsoTopeUI:CreateWindow(config)
 		box.Font = Enum.Font.GothamMedium
 		box.TextSize = 10
 		box.ClearTextOnFocus = false
+		box.Active = true
+		box.ZIndex = 20
+		box.ClipsDescendants = true
+		box.TextTruncate = Enum.TextTruncate.AtEnd
+		box.TextXAlignment = Enum.TextXAlignment.Left
+
+		local pad = Instance.new("UIPadding", box)
+		pad.PaddingLeft = UDim.new(0, 7)
+		pad.PaddingRight = UDim.new(0, 7)
+		pad.PaddingTop = UDim.new(0, 4)
+		pad.PaddingBottom = UDim.new(0, 4)
+
 		Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
 
 		local s = Instance.new("UIStroke", box)
@@ -580,29 +633,32 @@ function IsoTopeUI:CreateWindow(config)
 		s.Thickness = 1
 		s.Transparency = 0.72
 
-		if callback then
-			box.FocusLost:Connect(function(enter)
-				pcall(callback, box.Text, enter)
-			end)
-		end
-
-		return {
-			Box = box,
-			Set = function(self, t) box.Text = tostring(t) end,
-			Get = function() return box.Text end
-		}
+		box.Focused:Connect(function()
+			box.TextTruncate = Enum.TextTruncate.None
+			s.Color = THEME.accent
+			s.Transparency = 0.25
+		end)
+		box.FocusLost:Connect(function(enter)
+			box.TextTruncate = Enum.TextTruncate.AtEnd
+			s.Color = THEME.stroke
+			s.Transparency = 0.72
+			if callback then pcall(callback, box.Text, enter) end
+		end)
+		return box
 	end
 
-	local function makeButton(card, text, callback)
+	local function makeButton(card, text, callback, isAccent)
 		local btn = Instance.new("TextButton", card)
-		btn.Size = UDim2.fromOffset(78, 28)
-		btn.Position = UDim2.new(1, -90, 0.5, -14)
-		btn.BackgroundColor3 = THEME.control
+		btn.Size = UDim2.fromOffset(88, 28)
+		btn.Position = UDim2.new(1, -102, 0.5, -14)
+		btn.BackgroundColor3 = isAccent and THEME.accent or THEME.control
 		btn.Text = text or "CLICK"
-		btn.TextColor3 = THEME.text
-		btn.Font = Enum.Font.GothamMedium
-		btn.TextSize = 9
+		btn.TextColor3 = isAccent and Color3.fromRGB(15, 20, 25) or THEME.text
+		btn.Font = Enum.Font.GothamBold
+		btn.TextSize = 8
 		btn.AutoButtonColor = false
+		btn.Active = true
+		btn.ZIndex = 20
 		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
 		local s = Instance.new("UIStroke", btn)
@@ -610,100 +666,128 @@ function IsoTopeUI:CreateWindow(config)
 		s.Thickness = 1
 		s.Transparency = 0.72
 
-		btn.MouseButton1Click:Connect(function()
-			btn.Text = "OK ✓"
-			btn.TextColor3 = THEME.accent
-			if callback then pcall(callback) end
-			task.delay(0.9, function()
+		btn.Activated:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.1), { BackgroundColor3 = THEME.accent }):Play()
+			task.delay(0.12, function()
 				if btn and btn.Parent then
-					btn.Text = text or "CLICK"
-					btn.TextColor3 = THEME.text
+					TweenService:Create(btn, TweenInfo.new(0.15), { BackgroundColor3 = isAccent and THEME.accent or THEME.control }):Play()
 				end
 			end)
+			if callback then pcall(callback) end
 		end)
-
 		return btn
 	end
 
-	local function makeSlider(card, opts)
-		opts = opts or {}
-		local min = opts.Min or 0
-		local max = opts.Max or 100
-		local def = opts.Default or min
-		local suffix = opts.Suffix or ""
-		local callback = opts.Callback
+	local function makeSlider(card, minOrOpts, max, default, callback, isFloat, unit)
+		local min, def, cb, isF, u
+		if typeof(minOrOpts) == "table" then
+			min = minOrOpts.Min or 0
+			max = minOrOpts.Max or 100
+			def = minOrOpts.Default or min
+			u = minOrOpts.Suffix or ""
+			cb = minOrOpts.Callback
+			isF = minOrOpts.IsFloat or (minOrOpts.Step and minOrOpts.Step < 1)
+		else
+			min = minOrOpts or 0
+			max = max or 100
+			def = default or min
+			cb = callback
+			isF = isFloat
+			u = unit or ""
+		end
+		def = math.clamp(def or min, min, max)
 
-		card.Size = UDim2.new(1, -4, 0, 68)
+		local container = Instance.new("Frame", card)
+		container.Size = UDim2.fromOffset(128, 28)
+		container.Position = UDim2.new(1, -140, 0.5, -14)
+		container.BackgroundTransparency = 1
+		container.ZIndex = 20
 
-		local valLabel = Instance.new("TextLabel", card)
-		valLabel.Size = UDim2.fromOffset(60, 20)
-		valLabel.Position = UDim2.new(1, -72, 0, 8)
-		valLabel.BackgroundTransparency = 1
-		valLabel.Text = tostring(def) .. suffix
-		valLabel.TextColor3 = THEME.accent
-		valLabel.Font = Enum.Font.GothamBold
-		valLabel.TextSize = 11
-		valLabel.TextXAlignment = Enum.TextXAlignment.Right
-
-		local track = Instance.new("Frame", card)
-		track.Size = UDim2.new(1, -30, 0, 6)
-		track.Position = UDim2.fromOffset(15, 48)
-		track.BackgroundColor3 = THEME.control
+		local track = Instance.new("Frame", container)
+		track.Size = UDim2.new(1, 0, 0, 6)
+		track.Position = UDim2.new(0, 0, 0.5, 3)
+		track.BackgroundColor3 = Color3.fromRGB(37, 44, 55)
+		track.BorderSizePixel = 0
 		Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
 		local fill = Instance.new("Frame", track)
-		fill.Size = UDim2.new(math.clamp((def - min) / (max - min), 0, 1), 0, 1, 0)
+		fill.Size = UDim2.new((def - min) / (max - min), 0, 1, 0)
 		fill.BackgroundColor3 = THEME.accent
+		fill.BorderSizePixel = 0
 		Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
 
-		local knob = Instance.new("Frame", track)
-		knob.Size = UDim2.fromOffset(14, 14)
+		local valLabel = Instance.new("TextLabel", container)
+		valLabel.Size = UDim2.new(1, 0, 0, 12)
+		valLabel.Position = UDim2.new(0, 0, 0, -3)
+		valLabel.BackgroundTransparency = 1
+		if isF then
+			valLabel.Text = string.format("%.1f", def) .. u
+		else
+			valLabel.Text = string.format("%d", math.floor(def + 0.5)) .. u
+		end
+		valLabel.TextColor3 = THEME.accent
+		valLabel.Font = Enum.Font.GothamBold
+		valLabel.TextSize = 9
+		valLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+		local knob = Instance.new("TextButton", track)
+		knob.Size = UDim2.fromOffset(12, 12)
 		knob.AnchorPoint = Vector2.new(0.5, 0.5)
 		knob.Position = UDim2.new(fill.Size.X.Scale, 0, 0.5, 0)
-		knob.BackgroundColor3 = Color3.fromRGB(240, 245, 255)
+		knob.BackgroundColor3 = Color3.fromRGB(241, 245, 249)
+		knob.BorderSizePixel = 0
+		knob.Text = ""
+		knob.AutoButtonColor = false
 		Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
-		local currentVal = def
-		local dragging = false
-
-		local function updateVal(inputX)
-			local p = track.AbsolutePosition.X
-			local w = track.AbsoluteSize.X
-			local pct = math.clamp((inputX - p) / w, 0, 1)
-			currentVal = math.floor(min + (max - min) * pct + 0.5)
-			fill.Size = UDim2.new(pct, 0, 1, 0)
-			knob.Position = UDim2.new(pct, 0, 0.5, 0)
-			valLabel.Text = tostring(currentVal) .. suffix
-			if callback then pcall(callback, currentVal) end
+		local sliding = false
+		local function setValue(rawVal)
+			local val
+			if isF then
+				val = math.clamp(math.floor(rawVal * 10 + 0.5) / 10, min, max)
+				valLabel.Text = string.format("%.1f", val) .. u
+			else
+				val = math.clamp(math.floor(rawVal + 0.5), min, max)
+				valLabel.Text = string.format("%d", val) .. u
+			end
+			local alpha = (val - min) / (max - min)
+			fill.Size = UDim2.new(alpha, 0, 1, 0)
+			knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+			if cb then pcall(cb, val) end
 		end
 
-		track.InputBegan:Connect(function(inp)
-			if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-				dragging = true
-				updateVal(inp.Position.X)
+		local function updateFromInput(input)
+			local x = input.Position.X - track.AbsolutePosition.X
+			local alpha = math.clamp(x / track.AbsoluteSize.X, 0, 1)
+			local val = min + (max - min) * alpha
+			setValue(val)
+		end
+
+		knob.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				sliding = true
 			end
 		end)
-		UserInputService.InputEnded:Connect(function(inp)
-			if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-				dragging = false
+		track.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				sliding = true
+				updateFromInput(input)
 			end
 		end)
-		UserInputService.InputChanged:Connect(function(inp)
-			if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
-				updateVal(inp.Position.X)
+		UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				sliding = false
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(input)
+			if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				updateFromInput(input)
 			end
 		end)
 
 		return {
-			Set = function(self, v)
-				currentVal = math.clamp(tonumber(v) or min, min, max)
-				local pct = (currentVal - min) / (max - min)
-				fill.Size = UDim2.new(pct, 0, 1, 0)
-				knob.Position = UDim2.new(pct, 0, 0.5, 0)
-				valLabel.Text = tostring(currentVal) .. suffix
-				if callback then pcall(callback, currentVal) end
-			end,
-			Get = function() return currentVal end
+			Set = function(self, v) setValue(v) end,
+			Get = function() return def end
 		}
 	end
 
@@ -951,6 +1035,7 @@ function IsoTopeUI:CreateWindow(config)
 		Tabs = Tabs,
 		Content = Content,
 		selectCategory = selectCategory,
+		updateCategorySize = updateCategorySize,
 		createCard = createCard,
 		makeToggle = makeToggle,
 		makeButton = makeButton,
@@ -1025,7 +1110,13 @@ function IsoTopeUI:CreateWindow(config)
 
 		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 			if activeCategory == tabName then
-				CategoryHost.Size = UDim2.new(1, -4, 0, layout.AbsoluteContentSize.Y + 8)
+				updateCategorySize(tabName)
+			end
+		end)
+
+		frame.ChildAdded:Connect(function()
+			if activeCategory == tabName then
+				updateCategorySize(tabName)
 			end
 		end)
 
@@ -1050,6 +1141,9 @@ function IsoTopeUI:CreateWindow(config)
 		tabButtons[tabName] = b
 
 		b.MouseButton1Click:Connect(function()
+			selectCategory(tabName)
+		end)
+		b.Activated:Connect(function()
 			selectCategory(tabName)
 		end)
 
