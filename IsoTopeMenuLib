@@ -1,0 +1,1433 @@
+-- Modern Glass UI (Clean Menu Library Edition) • v2.7
+-- Complete Mobile & PC Compatibility • Advanced Customization • Power Features
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local VirtualUser = game:GetService("VirtualUser")
+local GuiService = nil
+pcall(function() GuiService = game:GetService("GuiService") end)
+
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+	pcall(function() Players:GetPropertyChangedSignal("LocalPlayer"):Wait() end)
+	LocalPlayer = Players.LocalPlayer
+end
+while not LocalPlayer do
+	LocalPlayer = Players.LocalPlayer
+	task.wait(0.1)
+end
+
+-- Universal Executor Safe Parent
+local function getSafeParent()
+	if typeof(gethui) == "function" then
+		local ok, hui = pcall(gethui)
+		if ok and hui and typeof(hui) == "Instance" then return hui end
+	end
+	local canCore = pcall(function()
+		local test = Instance.new("Folder")
+		test.Name = "__iso_test"
+		test.Parent = CoreGui
+		test:Destroy()
+	end)
+	if canCore then return CoreGui end
+	if LocalPlayer then
+		local pg = LocalPlayer:FindFirstChildOfClass("PlayerGui") or LocalPlayer:FindFirstChild("PlayerGui")
+		if pg then return pg end
+	end
+	return CoreGui
+end
+
+-- Authentic Themes (from MM2 & BABFT)
+local THEME_PRESETS = {
+	Dark = {
+		bg = Color3.fromRGB(12, 16, 21),
+		panel = Color3.fromRGB(19, 24, 31),
+		card = Color3.fromRGB(25, 31, 40),
+		cardHover = Color3.fromRGB(31, 39, 50),
+		control = Color3.fromRGB(16, 21, 28),
+		stroke = Color3.fromRGB(92, 108, 128),
+		text = Color3.fromRGB(241, 245, 249),
+		sub = Color3.fromRGB(145, 157, 173),
+		accent = Color3.fromRGB(70, 194, 134),
+		blue = Color3.fromRGB(80, 170, 235),
+		red = Color3.fromRGB(235, 92, 112),
+	},
+	Emerald = {
+		bg = Color3.fromRGB(6, 18, 14),
+		panel = Color3.fromRGB(10, 28, 22),
+		card = Color3.fromRGB(15, 38, 30),
+		cardHover = Color3.fromRGB(20, 50, 39),
+		control = Color3.fromRGB(8, 24, 18),
+		stroke = Color3.fromRGB(40, 140, 95),
+		text = Color3.fromRGB(235, 252, 244),
+		sub = Color3.fromRGB(130, 190, 160),
+		accent = Color3.fromRGB(50, 215, 130),
+		blue = Color3.fromRGB(50, 215, 130),
+		red = Color3.fromRGB(235, 80, 100),
+	},
+	Blue = {
+		bg = Color3.fromRGB(9, 17, 28),
+		panel = Color3.fromRGB(14, 28, 45),
+		card = Color3.fromRGB(19, 39, 61),
+		cardHover = Color3.fromRGB(25, 50, 77),
+		control = Color3.fromRGB(13, 30, 49),
+		stroke = Color3.fromRGB(65, 130, 190),
+		text = Color3.fromRGB(238, 246, 255),
+		sub = Color3.fromRGB(145, 175, 205),
+		accent = Color3.fromRGB(75, 160, 240),
+		blue = Color3.fromRGB(75, 160, 240),
+		red = Color3.fromRGB(235, 92, 112),
+	},
+	Purple = {
+		bg = Color3.fromRGB(15, 11, 23),
+		panel = Color3.fromRGB(25, 18, 37),
+		card = Color3.fromRGB(35, 25, 51),
+		cardHover = Color3.fromRGB(46, 33, 67),
+		control = Color3.fromRGB(25, 18, 39),
+		stroke = Color3.fromRGB(120, 90, 170),
+		text = Color3.fromRGB(247, 242, 255),
+		sub = Color3.fromRGB(170, 155, 190),
+		accent = Color3.fromRGB(160, 120, 235),
+		blue = Color3.fromRGB(160, 120, 235),
+		red = Color3.fromRGB(235, 92, 145),
+	},
+	AMOLED = {
+		bg = Color3.fromRGB(0, 0, 0),
+		panel = Color3.fromRGB(4, 4, 4),
+		card = Color3.fromRGB(10, 10, 10),
+		cardHover = Color3.fromRGB(18, 18, 18),
+		control = Color3.fromRGB(8, 8, 8),
+		stroke = Color3.fromRGB(55, 55, 55),
+		text = Color3.fromRGB(250, 250, 250),
+		sub = Color3.fromRGB(145, 145, 145),
+		accent = Color3.fromRGB(90, 175, 240),
+		blue = Color3.fromRGB(90, 175, 240),
+		red = Color3.fromRGB(240, 85, 105),
+	},
+	Cyberpunk = {
+		bg = Color3.fromRGB(13, 10, 24),
+		panel = Color3.fromRGB(22, 14, 38),
+		card = Color3.fromRGB(32, 19, 54),
+		cardHover = Color3.fromRGB(44, 25, 74),
+		control = Color3.fromRGB(18, 11, 31),
+		stroke = Color3.fromRGB(175, 45, 195),
+		text = Color3.fromRGB(255, 245, 255),
+		sub = Color3.fromRGB(200, 140, 220),
+		accent = Color3.fromRGB(0, 240, 220),
+		blue = Color3.fromRGB(0, 240, 220),
+		red = Color3.fromRGB(255, 55, 145),
+	},
+	Sunset = {
+		bg = Color3.fromRGB(20, 11, 14),
+		panel = Color3.fromRGB(32, 16, 20),
+		card = Color3.fromRGB(46, 22, 28),
+		cardHover = Color3.fromRGB(60, 28, 36),
+		control = Color3.fromRGB(26, 13, 17),
+		stroke = Color3.fromRGB(165, 70, 75),
+		text = Color3.fromRGB(255, 242, 238),
+		sub = Color3.fromRGB(215, 155, 150),
+		accent = Color3.fromRGB(255, 135, 60),
+		blue = Color3.fromRGB(255, 135, 60),
+		red = Color3.fromRGB(240, 65, 85),
+	},
+	Monokai = {
+		bg = Color3.fromRGB(22, 23, 20),
+		panel = Color3.fromRGB(33, 34, 30),
+		card = Color3.fromRGB(43, 45, 40),
+		cardHover = Color3.fromRGB(56, 58, 51),
+		control = Color3.fromRGB(27, 28, 24),
+		stroke = Color3.fromRGB(110, 115, 100),
+		text = Color3.fromRGB(248, 248, 242),
+		sub = Color3.fromRGB(165, 165, 150),
+		accent = Color3.fromRGB(166, 226, 46),
+		blue = Color3.fromRGB(102, 217, 239),
+		red = Color3.fromRGB(249, 38, 114),
+	}
+}
+
+-- 8 Authentic Accent Colors
+local ACCENT_PALETTE = {
+	{ name = "Emerald Mint", color = Color3.fromRGB(70, 194, 134) },
+	{ name = "Sky Blue", color = Color3.fromRGB(80, 170, 235) },
+	{ name = "Cyber Cyan", color = Color3.fromRGB(0, 240, 220) },
+	{ name = "Lavender", color = Color3.fromRGB(160, 120, 235) },
+	{ name = "Amber Gold", color = Color3.fromRGB(245, 166, 35) },
+	{ name = "Coral Rose", color = Color3.fromRGB(235, 92, 112) },
+	{ name = "Hot Pink", color = Color3.fromRGB(255, 60, 150) },
+	{ name = "Lime Matrix", color = Color3.fromRGB(166, 226, 46) }
+}
+
+-- Mobile check
+local isMobile = (function()
+	local hasTouch = false
+	pcall(function() hasTouch = UserInputService.TouchEnabled end)
+	local hasKeyboard = false
+	pcall(function() hasKeyboard = UserInputService.KeyboardEnabled end)
+	local cam = Workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	return (hasTouch and not hasKeyboard) or (hasTouch and (vp.X < 900 or vp.Y < 600))
+end)()
+
+local IsoTopeUI = {}
+IsoTopeUI.__index = IsoTopeUI
+IsoTopeUI.THEME_PRESETS = THEME_PRESETS
+IsoTopeUI.ACCENT_PALETTE = ACCENT_PALETTE
+
+function IsoTopeUI:CreateWindow(config)
+	IsoTopeUI._windowCreated = true
+	config = config or {}
+
+	local titleText = config.Title or "Glass UI"
+	local subText = config.Subtitle or "Только интерфейс"
+	local currentThemeName = config.Theme or "Dark"
+	local THEME = table.clone(THEME_PRESETS[currentThemeName] or THEME_PRESETS.Dark)
+	local hotkey = config.Keybind or Enum.KeyCode.LeftAlt
+	local showMobile = config.MobileToggle ~= false
+	local hasStatsBar = config.StatsBar ~= false
+
+	local UI = {
+		BackgroundTransparency = 0.16,
+		CardTransparency = 0.18,
+		StrokeTransparency = 0.48,
+		CornerRadius = 14,
+		AnimationTime = 0.28,
+		AnonymousMode = false,
+		RainbowMode = false,
+		AccentIndex = 1
+	}
+
+	local targetParent = getSafeParent()
+	pcall(function()
+		for _, old in ipairs(targetParent:GetChildren()) do
+			if old.Name == "ModernGlassUI" or old.Name == "IsoTope_MobileToggle" then
+				old:Destroy()
+			end
+		end
+	end)
+
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "ModernGlassUI"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.IgnoreGuiInset = true
+	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	ScreenGui.DisplayOrder = 2147483647
+	ScreenGui.Parent = targetParent
+
+	local MainFrame = Instance.new("Frame")
+	MainFrame.Name = "Main"
+	MainFrame.Size = UDim2.fromOffset(470, 630)
+	MainFrame.Position = UDim2.new(0.5, -235, 0.25, -100)
+	MainFrame.BackgroundColor3 = THEME.bg
+	MainFrame.BackgroundTransparency = UI.BackgroundTransparency
+	MainFrame.BorderSizePixel = 0
+	MainFrame.Active = true
+	MainFrame.ClipsDescendants = true
+	MainFrame.Parent = ScreenGui
+
+	-- Mobile Auto-Scaling with Manual Scale support
+	local uiScale = Instance.new("UIScale", MainFrame)
+	local userScaleMultiplier = 1.0
+
+	local function updateScale()
+		local cam = Workspace.CurrentCamera
+		local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+		local baseFit = 1.0
+		if vp.X < 920 or vp.Y < 650 or isMobile then
+			local sX = (vp.X - 20) / 480
+			local sY = (vp.Y - 40) / 640
+			baseFit = math.clamp(math.min(sX, sY), 0.50, 0.95)
+		end
+		uiScale.Scale = baseFit * userScaleMultiplier
+	end
+	updateScale()
+	local cam = Workspace.CurrentCamera
+	if cam then cam:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale) end
+
+	Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, UI.CornerRadius)
+
+	local mainStroke = Instance.new("UIStroke", MainFrame)
+	mainStroke.Color = THEME.stroke
+	mainStroke.Thickness = 1
+	mainStroke.Transparency = UI.StrokeTransparency
+
+	local glassGradient = Instance.new("UIGradient", MainFrame)
+	glassGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(43, 55, 78)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(24, 31, 44)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 19, 28)),
+	})
+	glassGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.10),
+		NumberSequenceKeypoint.new(0.5, 0.22),
+		NumberSequenceKeypoint.new(1, 0.08),
+	})
+	glassGradient.Rotation = 22
+
+	-- Top bar
+	local TopBar = Instance.new("Frame", MainFrame)
+	TopBar.Size = UDim2.new(1, 0, 0, 58)
+	TopBar.BackgroundColor3 = THEME.panel
+	TopBar.BackgroundTransparency = 0.18
+	TopBar.BorderSizePixel = 0
+	Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, UI.CornerRadius)
+
+	local accent = Instance.new("Frame", TopBar)
+	accent.Size = UDim2.new(0, 4, 1, -20)
+	accent.Position = UDim2.new(0, 10, 0, 10)
+	accent.BackgroundColor3 = THEME.accent
+	accent.BorderSizePixel = 0
+	Instance.new("UICorner", accent).CornerRadius = UDim.new(0, 2)
+
+	local Title = Instance.new("TextLabel", TopBar)
+	Title.Size = UDim2.new(0.5, 0, 0, 24)
+	Title.Position = UDim2.fromOffset(24, 8)
+	Title.BackgroundTransparency = 1
+	Title.Text = titleText
+	Title.TextColor3 = THEME.text
+	Title.TextSize = 17
+	Title.Font = Enum.Font.GothamBold
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+
+	local Subtitle = Instance.new("TextLabel", TopBar)
+	Subtitle.Size = UDim2.new(0.5, 0, 0, 17)
+	Subtitle.Position = UDim2.fromOffset(24, 31)
+	Subtitle.BackgroundTransparency = 1
+	Subtitle.Text = subText
+	Subtitle.TextColor3 = THEME.sub
+	Subtitle.TextSize = 10
+	Subtitle.Font = Enum.Font.Gotham
+	Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+	local StatusPill = Instance.new("TextLabel", TopBar)
+	StatusPill.Size = UDim2.fromOffset(112, 28)
+	StatusPill.Position = UDim2.new(1, -166, 0, 15)
+	StatusPill.BackgroundColor3 = Color3.fromRGB(24, 55, 40)
+	StatusPill.BackgroundTransparency = 0.08
+	StatusPill.Text = "● READY"
+	StatusPill.TextColor3 = THEME.accent
+	StatusPill.TextSize = 10
+	StatusPill.Font = Enum.Font.GothamBold
+	Instance.new("UICorner", StatusPill).CornerRadius = UDim.new(0, 9)
+
+	local HideBtn = Instance.new("TextButton", TopBar)
+	HideBtn.Size = UDim2.fromOffset(30, 28)
+	HideBtn.Position = UDim2.new(1, -42, 0, 15)
+	HideBtn.BackgroundColor3 = Color3.fromRGB(37, 44, 55)
+	HideBtn.BackgroundTransparency = 0.08
+	HideBtn.Text = "—"
+	HideBtn.TextColor3 = THEME.sub
+	HideBtn.TextSize = 14
+	HideBtn.Font = Enum.Font.GothamBold
+	HideBtn.AutoButtonColor = false
+	Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 8)
+
+	-- Stats Bar (3 Cells)
+	local StatsBar = nil
+	local statCellLabels = {}
+	local tabsTopOffset = 68
+
+	if hasStatsBar then
+		StatsBar = Instance.new("Frame", MainFrame)
+		StatsBar.Size = UDim2.new(1, -24, 0, 64)
+		StatsBar.Position = UDim2.fromOffset(12, 68)
+		StatsBar.BackgroundColor3 = THEME.panel
+		StatsBar.BackgroundTransparency = 0.24
+		StatsBar.BorderSizePixel = 0
+		Instance.new("UICorner", StatsBar).CornerRadius = UDim.new(0, 12)
+
+		local function statCell(x, title, value, key)
+			local f = Instance.new("Frame", StatsBar)
+			f.Size = UDim2.new(0.333, -2, 1, 0)
+			f.Position = UDim2.new(x, 0, 0, 0)
+			f.BackgroundTransparency = 1
+
+			local t = Instance.new("TextLabel", f)
+			t.Size = UDim2.new(1, 0, 0, 17)
+			t.Position = UDim2.fromOffset(0, 9)
+			t.BackgroundTransparency = 1
+			t.Text = title
+			t.TextColor3 = THEME.sub
+			t.TextSize = 9
+			t.Font = Enum.Font.Gotham
+
+			local v = Instance.new("TextLabel", f)
+			v.Size = UDim2.new(1, 0, 0, 24)
+			v.Position = UDim2.fromOffset(0, 27)
+			v.BackgroundTransparency = 1
+			v.Text = value
+			v.TextColor3 = THEME.text
+			v.TextSize = 14
+			v.Font = Enum.Font.GothamBold
+			if key then statCellLabels[key] = { Title = t, Value = v } end
+			return v
+		end
+
+		statCell(0, "STAT A", "—", "A")
+		statCell(0.333, "STAT B", "—", "B")
+		statCell(0.666, "STAT C", "—", "C")
+		tabsTopOffset = 136
+	end
+
+	-- Tabs Scrolling Frame
+	local Tabs = Instance.new("ScrollingFrame", MainFrame)
+	Tabs.Size = UDim2.new(1, -24, 0, 38)
+	Tabs.Position = UDim2.fromOffset(12, tabsTopOffset)
+	Tabs.BackgroundTransparency = 1
+	Tabs.BorderSizePixel = 0
+	Tabs.ScrollBarThickness = 3
+	Tabs.ScrollingDirection = Enum.ScrollingDirection.X
+	Tabs.AutomaticCanvasSize = Enum.AutomaticSize.X
+	Tabs.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+	local tabLayout = Instance.new("UIListLayout", Tabs)
+	tabLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabLayout.Padding = UDim.new(0, 5)
+	tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	-- Content Scrolling Frame
+	local contentTopOffset = tabsTopOffset + 50
+	local Content = Instance.new("ScrollingFrame", MainFrame)
+	Content.Size = UDim2.new(1, -24, 1, -(contentTopOffset + 52))
+	Content.Position = UDim2.fromOffset(12, contentTopOffset)
+	Content.BackgroundTransparency = 1
+	Content.BorderSizePixel = 0
+	Content.ScrollBarThickness = 3
+	Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+	local CategoryHost = Instance.new("Frame", Content)
+	CategoryHost.Size = UDim2.new(1, -4, 0, 0)
+	CategoryHost.BackgroundTransparency = 1
+	CategoryHost.AutomaticSize = Enum.AutomaticSize.Y
+
+	local CategoryFrames = {}
+	local tabButtons = {}
+	local activeCategory = nil
+	local styleCards = {}
+
+	local function updateTabVisuals()
+		for tabName, tab in pairs(tabButtons) do
+			if tabName == activeCategory then
+				tab.BackgroundColor3 = Color3.fromRGB(63, 88, 122)
+				tab.TextColor3 = THEME.text
+			else
+				tab.BackgroundColor3 = THEME.card
+				tab.TextColor3 = THEME.sub
+			end
+		end
+	end
+
+	local function selectCategory(name)
+		activeCategory = name
+		for categoryName, frame in pairs(CategoryFrames) do
+			frame.Visible = (categoryName == activeCategory)
+		end
+		local layout = CategoryFrames[activeCategory] and CategoryFrames[activeCategory]:FindFirstChildOfClass("UIListLayout")
+		if layout then
+			CategoryHost.Size = UDim2.new(1, -4, 0, layout.AbsoluteContentSize.Y + 8)
+		end
+		Content.CanvasPosition = Vector2.zero
+		updateTabVisuals()
+	end
+
+	local function createSectionTitle(parent, text)
+		local label = Instance.new("TextLabel", parent)
+		label.Size = UDim2.new(1, -4, 0, 20)
+		label.BackgroundTransparency = 1
+		label.Text = string.upper(text)
+		label.TextColor3 = THEME.sub
+		label.TextSize = 8
+		label.Font = Enum.Font.GothamBold
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		return label
+	end
+
+	local function createCard(parent, name, desc)
+		local card = Instance.new("Frame", parent)
+		card.Size = UDim2.new(1, -4, 0, 58)
+		card.BackgroundColor3 = THEME.card
+		card.BackgroundTransparency = UI.CardTransparency
+		card.BorderSizePixel = 0
+		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 11)
+
+		local s = Instance.new("UIStroke", card)
+		s.Color = THEME.stroke
+		s.Thickness = 1
+		s.Transparency = 0.72
+
+		local accentBar = Instance.new("Frame", card)
+		accentBar.Size = UDim2.new(0, 2, 1, -20)
+		accentBar.Position = UDim2.fromOffset(5, 10)
+		accentBar.BackgroundColor3 = THEME.blue
+		accentBar.BackgroundTransparency = 0.35
+		accentBar.BorderSizePixel = 0
+		Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
+
+		local n = Instance.new("TextLabel", card)
+		n.Size = UDim2.new(0.60, 0, 0, 19)
+		n.Position = UDim2.fromOffset(15, 8)
+		n.BackgroundTransparency = 1
+		n.Text = name
+		n.TextColor3 = THEME.text
+		n.TextSize = 11
+		n.Font = Enum.Font.GothamMedium
+		n.TextXAlignment = Enum.TextXAlignment.Left
+
+		local d = Instance.new("TextLabel", card)
+		d.Size = UDim2.new(0.64, 0, 0, 16)
+		d.Position = UDim2.fromOffset(15, 29)
+		d.BackgroundTransparency = 1
+		d.Text = desc or ""
+		d.TextColor3 = THEME.sub
+		d.TextSize = 8
+		d.Font = Enum.Font.Gotham
+		d.TextXAlignment = Enum.TextXAlignment.Left
+
+		styleCards[#styleCards + 1] = card
+
+		card.MouseEnter:Connect(function()
+			TweenService:Create(card, TweenInfo.new(0.14), { BackgroundColor3 = THEME.cardHover }):Play()
+		end)
+		card.MouseLeave:Connect(function()
+			TweenService:Create(card, TweenInfo.new(0.14), { BackgroundColor3 = THEME.card }):Play()
+		end)
+
+		return card
+	end
+
+	local function makeToggle(card, initial, callback)
+		local holder = Instance.new("Frame", card)
+		holder.Size = UDim2.fromOffset(46, 26)
+		holder.Position = UDim2.new(1, -60, 0.5, -13)
+		holder.BackgroundColor3 = Color3.fromRGB(54, 62, 76)
+		holder.BackgroundTransparency = 0.05
+		holder.BorderSizePixel = 0
+		Instance.new("UICorner", holder).CornerRadius = UDim.new(1, 0)
+
+		local knob = Instance.new("Frame", holder)
+		knob.Size = UDim2.fromOffset(20, 20)
+		knob.Position = UDim2.fromOffset(3, 3)
+		knob.BackgroundColor3 = Color3.fromRGB(226, 231, 240)
+		knob.BorderSizePixel = 0
+		Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+		local hit = Instance.new("TextButton", holder)
+		hit.Size = UDim2.fromScale(1, 1)
+		hit.BackgroundTransparency = 1
+		hit.Text = ""
+		hit.AutoButtonColor = false
+
+		local state = initial
+		local function update()
+			local targetPos = state and UDim2.new(1, -23, 0, 3) or UDim2.fromOffset(3, 3)
+			local targetColor = state and THEME.accent or Color3.fromRGB(54, 62, 76)
+			TweenService:Create(knob, TweenInfo.new(0.16), { Position = targetPos }):Play()
+			TweenService:Create(holder, TweenInfo.new(0.16), { BackgroundColor3 = targetColor }):Play()
+		end
+		update()
+
+		hit.MouseButton1Click:Connect(function()
+			state = not state
+			update()
+			if callback then pcall(callback, state) end
+		end)
+
+		return {
+			Holder = holder,
+			Set = function(self, val)
+				state = (val == true)
+				update()
+				if callback then pcall(callback, state) end
+			end,
+			Get = function() return state end
+		}
+	end
+
+	local function makeInput(card, default, placeholder, callback)
+		local box = Instance.new("TextBox", card)
+		box.Size = UDim2.fromOffset(88, 28)
+		box.Position = UDim2.new(1, -102, 0.5, -14)
+		box.BackgroundColor3 = THEME.control
+		box.BackgroundTransparency = 0.12
+		box.Text = tostring(default or "")
+		box.PlaceholderText = placeholder or ""
+		box.TextColor3 = THEME.text
+		box.PlaceholderColor3 = THEME.sub
+		box.Font = Enum.Font.GothamMedium
+		box.TextSize = 10
+		box.ClearTextOnFocus = false
+		Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
+
+		local s = Instance.new("UIStroke", box)
+		s.Color = THEME.stroke
+		s.Thickness = 1
+		s.Transparency = 0.72
+
+		if callback then
+			box.FocusLost:Connect(function(enter)
+				pcall(callback, box.Text, enter)
+			end)
+		end
+
+		return {
+			Box = box,
+			Set = function(self, t) box.Text = tostring(t) end,
+			Get = function() return box.Text end
+		}
+	end
+
+	local function makeButton(card, text, callback)
+		local btn = Instance.new("TextButton", card)
+		btn.Size = UDim2.fromOffset(78, 28)
+		btn.Position = UDim2.new(1, -90, 0.5, -14)
+		btn.BackgroundColor3 = THEME.control
+		btn.Text = text or "CLICK"
+		btn.TextColor3 = THEME.text
+		btn.Font = Enum.Font.GothamMedium
+		btn.TextSize = 9
+		btn.AutoButtonColor = false
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+
+		local s = Instance.new("UIStroke", btn)
+		s.Color = THEME.stroke
+		s.Thickness = 1
+		s.Transparency = 0.72
+
+		btn.MouseButton1Click:Connect(function()
+			btn.Text = "OK ✓"
+			btn.TextColor3 = THEME.accent
+			if callback then pcall(callback) end
+			task.delay(0.9, function()
+				if btn and btn.Parent then
+					btn.Text = text or "CLICK"
+					btn.TextColor3 = THEME.text
+				end
+			end)
+		end)
+
+		return btn
+	end
+
+	local function makeSlider(card, opts)
+		opts = opts or {}
+		local min = opts.Min or 0
+		local max = opts.Max or 100
+		local def = opts.Default or min
+		local suffix = opts.Suffix or ""
+		local callback = opts.Callback
+
+		card.Size = UDim2.new(1, -4, 0, 68)
+
+		local valLabel = Instance.new("TextLabel", card)
+		valLabel.Size = UDim2.fromOffset(60, 20)
+		valLabel.Position = UDim2.new(1, -72, 0, 8)
+		valLabel.BackgroundTransparency = 1
+		valLabel.Text = tostring(def) .. suffix
+		valLabel.TextColor3 = THEME.accent
+		valLabel.Font = Enum.Font.GothamBold
+		valLabel.TextSize = 11
+		valLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+		local track = Instance.new("Frame", card)
+		track.Size = UDim2.new(1, -30, 0, 6)
+		track.Position = UDim2.fromOffset(15, 48)
+		track.BackgroundColor3 = THEME.control
+		Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+		local fill = Instance.new("Frame", track)
+		fill.Size = UDim2.new(math.clamp((def - min) / (max - min), 0, 1), 0, 1, 0)
+		fill.BackgroundColor3 = THEME.accent
+		Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+		local knob = Instance.new("Frame", track)
+		knob.Size = UDim2.fromOffset(14, 14)
+		knob.AnchorPoint = Vector2.new(0.5, 0.5)
+		knob.Position = UDim2.new(fill.Size.X.Scale, 0, 0.5, 0)
+		knob.BackgroundColor3 = Color3.fromRGB(240, 245, 255)
+		Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+		local currentVal = def
+		local dragging = false
+
+		local function updateVal(inputX)
+			local p = track.AbsolutePosition.X
+			local w = track.AbsoluteSize.X
+			local pct = math.clamp((inputX - p) / w, 0, 1)
+			currentVal = math.floor(min + (max - min) * pct + 0.5)
+			fill.Size = UDim2.new(pct, 0, 1, 0)
+			knob.Position = UDim2.new(pct, 0, 0.5, 0)
+			valLabel.Text = tostring(currentVal) .. suffix
+			if callback then pcall(callback, currentVal) end
+		end
+
+		track.InputBegan:Connect(function(inp)
+			if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				updateVal(inp.Position.X)
+			end
+		end)
+		UserInputService.InputEnded:Connect(function(inp)
+			if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+				dragging = false
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(inp)
+			if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+				updateVal(inp.Position.X)
+			end
+		end)
+
+		return {
+			Set = function(self, v)
+				currentVal = math.clamp(tonumber(v) or min, min, max)
+				local pct = (currentVal - min) / (max - min)
+				fill.Size = UDim2.new(pct, 0, 1, 0)
+				knob.Position = UDim2.new(pct, 0, 0.5, 0)
+				valLabel.Text = tostring(currentVal) .. suffix
+				if callback then pcall(callback, currentVal) end
+			end,
+			Get = function() return currentVal end
+		}
+	end
+
+	-- Footer
+	local footer = Instance.new("TextLabel", MainFrame)
+	footer.Size = UDim2.new(1, -24, 0, 24)
+	footer.Position = UDim2.new(0, 12, 1, -34)
+	footer.BackgroundTransparency = 1
+	footer.Text = "Alt = свернуть  •  Вкладки = категории  •  Тяни за край для размера"
+	footer.TextColor3 = THEME.sub
+	footer.TextSize = 10
+	footer.Font = Enum.Font.Gotham
+	footer.TextXAlignment = Enum.TextXAlignment.Left
+
+	-- Mouse & Touch Dragging
+	do
+		local dragging = false
+		local dragStart, startPos
+
+		TopBar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = MainFrame.Position
+			end
+		end)
+
+		TopBar.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = false
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				local d = input.Position - dragStart
+				MainFrame.Position = UDim2.new(
+					startPos.X.Scale, startPos.X.Offset + d.X,
+					startPos.Y.Scale, startPos.Y.Offset + d.Y
+				)
+			end
+		end)
+	end
+
+	-- Resize Handle (CRITICAL: Declared outside so setCollapsed can hide it properly!)
+	local handle = Instance.new("TextButton", MainFrame)
+	handle.Name = "ResizeHandle"
+	handle.Size = UDim2.fromOffset(20, 20)
+	handle.Position = UDim2.new(1, -20, 1, -20)
+	handle.BackgroundTransparency = 1
+	handle.Text = "↘"
+	handle.TextColor3 = THEME.sub
+	handle.TextSize = 12
+	handle.Font = Enum.Font.GothamBold
+	handle.AutoButtonColor = false
+	handle.ZIndex = 100
+
+	do
+		local resizing = false
+		local startInput, startSize
+
+		handle.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				resizing = true
+				startInput = input.Position
+				startSize = MainFrame.AbsoluteSize
+			end
+		end)
+
+		handle.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				resizing = false
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(input)
+			if not resizing then return end
+			if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+			local delta = input.Position - startInput
+			local w = math.clamp(startSize.X + delta.X, 420, 900)
+			local h = math.clamp(startSize.Y + delta.Y, 500, 900)
+			MainFrame.Size = UDim2.fromOffset(w, h)
+		end)
+	end
+
+	-- Floating Mobile Toggle Button (Draggable ⚡)
+	local mobGui = nil
+	local mobBtn = nil
+	if showMobile then
+		mobGui = Instance.new("ScreenGui")
+		mobGui.Name = "IsoTope_MobileToggle"
+		mobGui.ResetOnSpawn = false
+		mobGui.DisplayOrder = 2147483646
+		mobGui.Parent = targetParent
+
+		mobBtn = Instance.new("TextButton", mobGui)
+		mobBtn.Size = UDim2.fromOffset(46, 46)
+		mobBtn.Position = UDim2.new(0.04, 0, 0.28, 0)
+		mobBtn.BackgroundColor3 = THEME.panel
+		mobBtn.BackgroundTransparency = 0.15
+		mobBtn.Text = "⚡"
+		mobBtn.TextColor3 = THEME.accent
+		mobBtn.TextSize = 22
+		mobBtn.AutoButtonColor = false
+		mobBtn.Active = true
+		Instance.new("UICorner", mobBtn).CornerRadius = UDim.new(0, 14)
+
+		local mobStroke = Instance.new("UIStroke", mobBtn)
+		mobStroke.Color = THEME.accent
+		mobStroke.Thickness = 1.5
+
+		local mDrag = false
+		local mStart, mPos
+		mobBtn.InputBegan:Connect(function(inp)
+			if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+				mDrag = true
+				mStart = inp.Position
+				mPos = mobBtn.Position
+				inp.Changed:Connect(function()
+					if inp.UserInputState == Enum.UserInputState.End then mDrag = false end
+				end)
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(inp)
+			if mDrag and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+				local delta = inp.Position - mStart
+				mobBtn.Position = UDim2.new(mPos.X.Scale, mPos.X.Offset + delta.X, mPos.Y.Scale, mPos.Y.Offset + delta.Y)
+			end
+		end)
+
+		mobBtn.MouseButton1Click:Connect(function()
+			MainFrame.Visible = not MainFrame.Visible
+		end)
+	end
+
+	-- Collapse / Expand (FIXED: handle.Visible hides properly when collapsed!)
+	local collapsed = false
+	local expandedSize = UDim2.fromOffset(470, 630)
+	local collapsedSize = UDim2.fromOffset(470, 58)
+
+	local function setCollapsed(state)
+		if collapsed == state then return end
+		collapsed = state
+
+		Content.Visible = not state
+		if StatsBar then StatsBar.Visible = not state end
+		Tabs.Visible = not state
+		footer.Visible = not state
+		-- FIX: Hide resize handle arrow ↘ so it never shows in collapsed topbar!
+		if handle then handle.Visible = not state end
+
+		local target = state and collapsedSize or expandedSize
+		TweenService:Create(MainFrame, TweenInfo.new(UI.AnimationTime, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Size = target,
+			BackgroundTransparency = state and 1 or UI.BackgroundTransparency,
+		}):Play()
+		TweenService:Create(mainStroke, TweenInfo.new(UI.AnimationTime, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Transparency = state and 1 or UI.StrokeTransparency,
+		}):Play()
+		HideBtn.Text = state and "+" or "—"
+	end
+
+	HideBtn.MouseButton1Click:Connect(function()
+		setCollapsed(not collapsed)
+	end)
+
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed then return end
+		if input.KeyCode == hotkey or input.KeyCode == Enum.KeyCode.RightAlt then
+			setCollapsed(not collapsed)
+		end
+	end)
+
+	-- Theme & Accent Applicators
+	local function applyTheme(name)
+		local preset = THEME_PRESETS[name]
+		if not preset then return end
+		currentThemeName = name
+		for k, v in pairs(preset) do THEME[k] = v end
+		MainFrame.BackgroundColor3 = THEME.bg
+		TopBar.BackgroundColor3 = THEME.panel
+		if StatsBar then StatsBar.BackgroundColor3 = THEME.panel end
+		mainStroke.Color = THEME.stroke
+		Title.TextColor3 = THEME.text
+		Subtitle.TextColor3 = THEME.sub
+		StatusPill.TextColor3 = THEME.accent
+		accent.BackgroundColor3 = THEME.accent
+		if mobBtn then
+			mobBtn.BackgroundColor3 = THEME.panel
+			mobBtn.TextColor3 = THEME.accent
+		end
+		for _, card in ipairs(styleCards) do
+			if card and card.Parent then
+				card.BackgroundColor3 = THEME.card
+			end
+		end
+		updateTabVisuals()
+	end
+
+	local function setAccentColor(col)
+		THEME.accent = col
+		THEME.blue = col
+		accent.BackgroundColor3 = col
+		StatusPill.TextColor3 = col
+		if mobBtn then
+			mobBtn.TextColor3 = col
+			local s = mobBtn:FindFirstChildOfClass("UIStroke")
+			if s then s.Color = col end
+		end
+		updateTabVisuals()
+	end
+
+	-- Rainbow Mode Loop (tick based)
+	RunService.Heartbeat:Connect(function()
+		if UI.RainbowMode then
+			local hue = (tick() * 0.25) % 1
+			local col = Color3.fromHSV(hue, 0.8, 1)
+			setAccentColor(col)
+		end
+	end)
+
+	-- Anonymous Mode
+	local function setAnonymousMode(enabled)
+		UI.AnonymousMode = enabled
+		local nameStr = enabled and "Anonymous" or tostring(LocalPlayer.Name)
+		Subtitle.Text = "@" .. nameStr .. " • 💉 [" .. tostring(identifyexecutor and identifyexecutor() or "Executor") .. "]"
+	end
+
+	-- Window Object API
+	local Window = {
+		MainFrame = MainFrame,
+		ScreenGui = ScreenGui,
+		THEME = THEME,
+		ApplyTheme = applyTheme,
+		SetAccentColor = setAccentColor,
+		SetAnonymousMode = setAnonymousMode,
+		UI = UI
+	}
+
+	function Window:SetStatus(text, color)
+		StatusPill.Text = "● " .. tostring(text)
+		if color then
+			StatusPill.TextColor3 = color
+		else
+			StatusPill.TextColor3 = (text == "ON" or text == "ACTIVE" or text == "FARMING") and THEME.accent or THEME.sub
+		end
+	end
+
+	function Window:SetStat(key, val, newTitle)
+		if statCellLabels[key] then
+			if val then statCellLabels[key].Value.Text = tostring(val) end
+			if newTitle then statCellLabels[key].Title.Text = tostring(newTitle) end
+		end
+	end
+
+	function Window:Notify(opts)
+		opts = opts or {}
+		pcall(function()
+			game:GetService("StarterGui"):SetCore("SendNotification", {
+				Title = opts.Title or titleText,
+				Text = opts.Content or opts.Text or "",
+				Duration = opts.Duration or 3
+			})
+		end)
+	end
+
+	-- Create Tab
+	function Window:CreateTab(tabOpts)
+		tabOpts = tabOpts or {}
+		local tabName = tabOpts.Name or "Tab"
+		local icon = tabOpts.Icon or ""
+
+		local frame = Instance.new("Frame", CategoryHost)
+		frame.Name = tabName .. "Category"
+		frame.Size = UDim2.new(1, 0, 0, 0)
+		frame.BackgroundTransparency = 1
+		frame.Visible = false
+		frame.AutomaticSize = Enum.AutomaticSize.Y
+
+		local layout = Instance.new("UIListLayout", frame)
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 7)
+
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			if activeCategory == tabName then
+				CategoryHost.Size = UDim2.new(1, -4, 0, layout.AbsoluteContentSize.Y + 8)
+			end
+		end)
+
+		CategoryFrames[tabName] = frame
+
+		local b = Instance.new("TextButton", Tabs)
+		b.Size = UDim2.fromOffset(84, 34)
+		b.BackgroundColor3 = THEME.card
+		b.BackgroundTransparency = 0.15
+		b.BorderSizePixel = 0
+		b.Text = (icon ~= "" and (icon .. " ") or "") .. tabName
+		b.TextColor3 = THEME.sub
+		b.TextSize = 9
+		b.Font = Enum.Font.GothamBold
+		b.AutoButtonColor = false
+		Instance.new("UICorner", b).CornerRadius = UDim.new(0, 9)
+
+		local stroke = Instance.new("UIStroke", b)
+		stroke.Color = THEME.stroke
+		stroke.Transparency = 0.72
+
+		tabButtons[tabName] = b
+
+		b.MouseButton1Click:Connect(function()
+			selectCategory(tabName)
+		end)
+
+		if not activeCategory then
+			selectCategory(tabName)
+		end
+
+		local Tab = { Frame = frame }
+
+		function Tab:CreateSection(text)
+			return createSectionTitle(frame, text)
+		end
+
+		function Tab:CreateCard(opts)
+			local title = type(opts) == "table" and (opts.Title or opts.Name) or tostring(opts or "Card")
+			local desc = type(opts) == "table" and (opts.Description or opts.Desc) or ""
+			local c = createCard(frame, title, desc)
+			local tLbl = c:FindFirstChild("TextLabel")
+			local dLbl = nil
+			for _, child in ipairs(c:GetChildren()) do
+				if child:IsA("TextLabel") and child ~= tLbl then
+					dLbl = child
+					break
+				end
+			end
+			return {
+				Card = c,
+				SetTitle = function(self, t) if tLbl then tLbl.Text = tostring(t) end end,
+				SetDesc = function(self, d) if dLbl then dLbl.Text = tostring(d) end end
+			}
+		end
+
+		function Tab:CreateToggle(opts)
+			opts = opts or {}
+			local card = createCard(frame, opts.Title or "Toggle", opts.Description or "")
+			local t = makeToggle(card, opts.Default == true, opts.Callback)
+			return { Card = card, Toggle = t, Set = function(self, v) t:Set(v) end, Get = function() return t:Get() end }
+		end
+
+		function Tab:CreateInput(opts)
+			opts = opts or {}
+			local card = createCard(frame, opts.Title or "Input", opts.Description or "")
+			local i = makeInput(card, opts.Default or "", opts.Placeholder or "", opts.Callback)
+			return { Card = card, Input = i, Set = function(self, v) i:Set(v) end, Get = function() return i:Get() end }
+		end
+
+		function Tab:CreateButton(opts)
+			opts = opts or {}
+			local card = createCard(frame, opts.Title or "Button", opts.Description or "")
+			local btn = makeButton(card, opts.ButtonText or "CLICK", opts.Callback)
+			return { Card = card, Button = btn }
+		end
+
+		function Tab:CreateSlider(opts)
+			opts = opts or {}
+			local card = createCard(frame, opts.Title or "Slider", opts.Description or "")
+			local s = makeSlider(card, opts)
+			return { Card = card, Slider = s, Set = function(self, v) s:Set(v) end, Get = function() return s:Get() end }
+		end
+
+		return Tab
+	end
+
+	return Window
+end
+
+_G.IsoTopeUI = IsoTopeUI
+if typeof(getgenv) == "function" then
+	pcall(function() getgenv().IsoTopeUI = IsoTopeUI end)
+end
+
+-- =========================================================================
+-- STANDALONE PREVIEW FALLBACK
+-- If executed alone without a script creating a window, spawn enriched demo!
+-- Includes full customization (Themes, Accents, Rainbow, Opacity, Outline,
+-- Scale, Anonymous) and Power Tools (Fly, Infinite Jump, Anti-AFK, FPS Boost)!
+-- =========================================================================
+task.spawn(function()
+	task.wait(0.25)
+	if not IsoTopeUI._windowCreated then
+		local win = IsoTopeUI:CreateWindow({
+			Title = "Glass UI",
+			Subtitle = "Только интерфейс",
+			Theme = "Dark",
+			Keybind = Enum.KeyCode.LeftAlt,
+			MobileToggle = true,
+			StatsBar = true
+		})
+
+		-- Tab 1: Player
+		local pTab = win:CreateTab({ Name = "Player", Icon = "⚡" })
+		pTab:CreateSection("Movement & Jump")
+
+		local infJumpEnabled = false
+		pTab:CreateToggle({
+			Title = "Infinite Jump",
+			Description = "Jump whenever you want in mid-air",
+			Default = false,
+			Callback = function(v)
+				infJumpEnabled = v
+			end
+		})
+		UserInputService.JumpRequest:Connect(function()
+			if infJumpEnabled then
+				local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+				if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+			end
+		end)
+
+		local speedSlider = pTab:CreateSlider({
+			Title = "Speed Boost",
+			Description = "Adjust walk velocity",
+			Min = 16,
+			Max = 150,
+			Default = 16,
+			Suffix = " spd",
+			Callback = function(v)
+				local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+				if hum then hum.WalkSpeed = v end
+			end
+		})
+
+		-- Tab 2: Movement (Fly)
+		local mTab = win:CreateTab({ Name = "Movement", Icon = "✈️" })
+		mTab:CreateSection("Fly System")
+
+		local flying = false
+		local flySpeed = 50
+		local flyBodyVel, flyBodyGyro, flyLoop
+
+		local function stopFly()
+			flying = false
+			if flyLoop then flyLoop:Disconnect(); flyLoop = nil end
+			if flyBodyVel then flyBodyVel:Destroy(); flyBodyVel = nil end
+			if flyBodyGyro then flyBodyGyro:Destroy(); flyBodyGyro = nil end
+			local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.PlatformStand = false end
+		end
+
+		local function startFly()
+			local char = LocalPlayer.Character
+			local root = char and char:FindFirstChild("HumanoidRootPart")
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			if not char or not root or not hum then return end
+			stopFly()
+			flying = true
+			hum.PlatformStand = true
+
+			flyBodyGyro = Instance.new("BodyGyro")
+			flyBodyGyro.P = 9e4
+			flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+			flyBodyGyro.CFrame = root.CFrame
+			flyBodyGyro.Parent = root
+
+			flyBodyVel = Instance.new("BodyVelocity")
+			flyBodyVel.Velocity = Vector3.zero
+			flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+			flyBodyVel.Parent = root
+
+			flyLoop = RunService.RenderStepped:Connect(function()
+				if not flying or not root or not hum or hum.Health <= 0 then
+					stopFly()
+					return
+				end
+				local cam = Workspace.CurrentCamera
+				if not cam then return end
+				local moveDir = Vector3.zero
+				if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+				if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+				if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+				if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+				if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+				if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+
+				if moveDir.Magnitude > 0.01 then
+					flyBodyVel.Velocity = moveDir.Unit * flySpeed
+				else
+					flyBodyVel.Velocity = Vector3.zero
+				end
+				flyBodyGyro.CFrame = cam.CFrame
+			end)
+		end
+
+		mTab:CreateToggle({
+			Title = "Enable Fly",
+			Description = "WASD + Space/Ctrl to fly smoothly in 3D",
+			Default = false,
+			Callback = function(v)
+				if v then startFly() else stopFly() end
+				win:SetStatus(v and "FLYING" or "READY")
+			end
+		})
+
+		mTab:CreateSlider({
+			Title = "Fly Velocity",
+			Description = "Flight speed multiplier",
+			Min = 20,
+			Max = 200,
+			Default = 50,
+			Suffix = " studs",
+			Callback = function(v)
+				flySpeed = v
+			end
+		})
+
+		-- Tab 3: Utility
+		local uTab = win:CreateTab({ Name = "Utility", Icon = "🛠️" })
+		uTab:CreateSection("Bypasses & Protection")
+
+		local antiAfkConn = nil
+		uTab:CreateToggle({
+			Title = "Anti-AFK Bypass",
+			Description = "Prevents 20-minute idle disconnection",
+			Default = true,
+			Callback = function(v)
+				if antiAfkConn then antiAfkConn:Disconnect(); antiAfkConn = nil end
+				if v then
+					antiAfkConn = LocalPlayer.Idled:Connect(function()
+						pcall(function()
+							VirtualUser:CaptureController()
+							VirtualUser:ClickButton2(Vector2.zero)
+						end)
+					end)
+				end
+			end
+		})
+		-- Init Anti-AFK
+		pcall(function()
+			LocalPlayer.Idled:Connect(function()
+				pcall(function()
+					VirtualUser:CaptureController()
+					VirtualUser:ClickButton2(Vector2.zero)
+				end)
+			end)
+		end)
+
+		uTab:CreateButton({
+			Title = "Send Notification",
+			Description = "Test in-game notification pill",
+			ButtonText = "NOTIFY",
+			Callback = function()
+				win:Notify({
+					Title = "Modern Glass UI",
+					Content = "Script is running 100% smoothly!",
+					Duration = 3
+				})
+			end
+		})
+
+		-- Tab 4: Settings (FULL CUSTOMIZATION КАК В MM2 И BABFT!)
+		local sTab = win:CreateTab({ Name = "Settings", Icon = "⚙️" })
+		sTab:CreateSection("Customization & Themes")
+
+		-- Theme Presets
+		local themeCard = sTab:CreateCard({
+			Title = "Theme Preset",
+			Description = "Choose visual palette (8 options)"
+		})
+		local themes = { "Dark", "Emerald", "Blue", "Purple", "AMOLED", "Cyberpunk", "Sunset", "Monokai" }
+		local tIdx = 1
+
+		local themeBtn = Instance.new("TextButton", themeCard.Card)
+		themeBtn.Size = UDim2.fromOffset(105, 28)
+		themeBtn.Position = UDim2.new(1, -118, 0.5, -14)
+		themeBtn.BackgroundColor3 = win.THEME.control
+		themeBtn.Text = "Dark"
+		themeBtn.TextColor3 = win.THEME.text
+		themeBtn.Font = Enum.Font.GothamMedium
+		themeBtn.TextSize = 9
+		themeBtn.AutoButtonColor = false
+		Instance.new("UICorner", themeBtn).CornerRadius = UDim.new(0, 8)
+
+		themeBtn.MouseButton1Click:Connect(function()
+			tIdx = (tIdx % #themes) + 1
+			themeBtn.Text = themes[tIdx]
+			win.ApplyTheme(themes[tIdx])
+		end)
+
+		-- Accent Colors Palette (8 Colors)
+		local accentCard = sTab:CreateCard({
+			Title = "Accent Color",
+			Description = "Cycle 8 glowing accent styles"
+		})
+		local aIdx = 1
+		local accentBtn = Instance.new("TextButton", accentCard.Card)
+		accentBtn.Size = UDim2.fromOffset(105, 28)
+		accentBtn.Position = UDim2.new(1, -118, 0.5, -14)
+		accentBtn.BackgroundColor3 = win.THEME.accent
+		accentBtn.Text = ACCENT_PALETTE[1].name
+		accentBtn.TextColor3 = Color3.fromRGB(15, 20, 25)
+		accentBtn.Font = Enum.Font.GothamBold
+		accentBtn.TextSize = 8
+		accentBtn.AutoButtonColor = false
+		Instance.new("UICorner", accentBtn).CornerRadius = UDim.new(0, 8)
+
+		accentBtn.MouseButton1Click:Connect(function()
+			aIdx = (aIdx % #ACCENT_PALETTE) + 1
+			local item = ACCENT_PALETTE[aIdx]
+			accentBtn.Text = item.name
+			accentBtn.BackgroundColor3 = item.color
+			win.SetAccentColor(item.color)
+		end)
+
+		-- Rainbow RGB Mode
+		sTab:CreateToggle({
+			Title = "Rainbow RGB Mode",
+			Description = "Smooth dynamic RGB color cycle on accents",
+			Default = false,
+			Callback = function(v)
+				win.UI.RainbowMode = v
+			end
+		})
+
+		-- Anonymous Mode
+		sTab:CreateToggle({
+			Title = "Anonymous Mode",
+			Description = "Hide your Roblox nickname across all UI",
+			Default = false,
+			Callback = function(v)
+				win.SetAnonymousMode(v)
+			end
+		})
+
+		-- Window Opacity
+		local opacities = {
+			{ name = "Solid (5%)", val = 0.05 },
+			{ name = "Normal (16%)", val = 0.16 },
+			{ name = "Glass (28%)", val = 0.28 },
+			{ name = "Clear (45%)", val = 0.45 },
+		}
+		local opIdx = 2
+		local opCard = sTab:CreateCard({
+			Title = "Window Opacity",
+			Description = "Glass transparency level"
+		})
+		local opBtn = Instance.new("TextButton", opCard.Card)
+		opBtn.Size = UDim2.fromOffset(105, 28)
+		opBtn.Position = UDim2.new(1, -118, 0.5, -14)
+		opBtn.BackgroundColor3 = win.THEME.control
+		opBtn.Text = opacities[opIdx].name
+		opBtn.TextColor3 = win.THEME.text
+		opBtn.Font = Enum.Font.GothamMedium
+		opBtn.TextSize = 8
+		opBtn.AutoButtonColor = false
+		Instance.new("UICorner", opBtn).CornerRadius = UDim.new(0, 8)
+
+		opBtn.MouseButton1Click:Connect(function()
+			opIdx = (opIdx % #opacities) + 1
+			opBtn.Text = opacities[opIdx].name
+			win.MainFrame.BackgroundTransparency = opacities[opIdx].val
+		end)
+
+		-- Border Outline
+		local outlines = {
+			{ name = "Vibrant (20%)", val = 0.20 },
+			{ name = "Standard (48%)", val = 0.48 },
+			{ name = "Subtle (75%)", val = 0.75 },
+			{ name = "None (100%)", val = 1.00 },
+		}
+		local outIdx = 2
+		local outCard = sTab:CreateCard({
+			Title = "Border Outline",
+			Description = "Frame border glow & stroke intensity"
+		})
+		local outBtn = Instance.new("TextButton", outCard.Card)
+		outBtn.Size = UDim2.fromOffset(105, 28)
+		outBtn.Position = UDim2.new(1, -118, 0.5, -14)
+		outBtn.BackgroundColor3 = win.THEME.control
+		outBtn.Text = outlines[outIdx].name
+		outBtn.TextColor3 = win.THEME.text
+		outBtn.Font = Enum.Font.GothamMedium
+		outBtn.TextSize = 8
+		outBtn.AutoButtonColor = false
+		Instance.new("UICorner", outBtn).CornerRadius = UDim.new(0, 8)
+
+		outBtn.MouseButton1Click:Connect(function()
+			outIdx = (outIdx % #outlines) + 1
+			outBtn.Text = outlines[outIdx].name
+			local s = win.MainFrame:FindFirstChildOfClass("UIStroke")
+			if s then s.Transparency = outlines[outIdx].val end
+		end)
+
+		-- Performance & GPU Saver
+		sTab:CreateSection("Performance & Optimization")
+
+		sTab:CreateToggle({
+			Title = "Disable 3D Rendering",
+			Description = "GPU Saver: black viewport to cut 95% GPU load",
+			Default = false,
+			Callback = function(v)
+				pcall(function()
+					RunService:Set3dRenderingEnabled(not v)
+				end)
+			end
+		})
+
+		sTab:CreateButton({
+			Title = "FPS Boost",
+			Description = "Lowers shadows & particle post-effects",
+			ButtonText = "BOOST",
+			Callback = function()
+				pcall(function()
+					Lighting.GlobalShadows = false
+					Lighting.FogEnd = 9e9
+					for _, v in ipairs(Lighting:GetChildren()) do
+						if v:IsA("PostEffect") then v.Enabled = false end
+					end
+				end)
+			end
+		})
+
+		sTab:CreateSlider({
+			Title = "FPS Cap Limit",
+			Description = "Lock frame rate to save battery / CPU",
+			Min = 30,
+			Max = 240,
+			Default = 60,
+			Suffix = " fps",
+			Callback = function(v)
+				pcall(function()
+					if setfpscap then setfpscap(v) end
+				end)
+			end
+		})
+
+		win:SetStatus("READY")
+	end
+end)
+
+return IsoTopeUI
