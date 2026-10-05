@@ -424,15 +424,50 @@ function IsoTopeUI:CreateWindow(config)
 	local tabButtons = {}
 	local activeCategory = nil
 	local styleCards = {}
+	local activeToggles = {}
+
+	local function updateTabsLayout()
+		local tabList = {}
+		for _, b in pairs(tabButtons) do
+			table.insert(tabList, b)
+		end
+		local count = #tabList
+		if count == 0 then return end
+		local availW = Tabs.AbsoluteSize.X
+		if availW <= 10 then availW = MainFrame.AbsoluteSize.X - 24 end
+		local pad = 5
+		local totalGap = pad * (count - 1)
+		local idealW = math.floor((availW - totalGap) / count)
+		local targetW = math.max(68, idealW)
+		for _, b in ipairs(tabList) do
+			b.Size = UDim2.new(0, targetW, 0, 32)
+		end
+	end
+
+	Tabs:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTabsLayout)
+	MainFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTabsLayout)
 
 	local function updateTabVisuals()
 		for tabName, tab in pairs(tabButtons) do
+			local s = tab:FindFirstChild("CategoryStroke") or tab:FindFirstChildOfClass("UIStroke")
 			if tabName == activeCategory then
-				tab.BackgroundColor3 = Color3.fromRGB(63, 88, 122)
+				tab.BackgroundColor3 = Color3.fromRGB(38, 52, 74)
 				tab.TextColor3 = THEME.text
+				tab.BackgroundTransparency = 0.05
+				if s then
+					s.Color = THEME.accent or Color3.fromRGB(0, 230, 210)
+					s.Transparency = 0.15
+					s.Thickness = 1.4
+				end
 			else
 				tab.BackgroundColor3 = THEME.card
 				tab.TextColor3 = THEME.sub
+				tab.BackgroundTransparency = 0.25
+				if s then
+					s.Color = THEME.stroke
+					s.Transparency = 0.45
+					s.Thickness = 1.0
+				end
 			end
 		end
 	end
@@ -577,26 +612,30 @@ function IsoTopeUI:CreateWindow(config)
 		hit.AutoButtonColor = false
 
 		local state = initial == true
-		local function update()
+		local function update(skipCallback)
 			local targetPos = state and UDim2.new(1, -23, 0, 3) or UDim2.fromOffset(3, 3)
-			local targetColor = state and THEME.accent or Color3.fromRGB(54, 62, 76)
+			local targetColor = state and (THEME.accent or Color3.fromRGB(0, 230, 210)) or Color3.fromRGB(54, 62, 76)
+			if state then
+				activeToggles[holder] = true
+			else
+				activeToggles[holder] = nil
+			end
 			TweenService:Create(knob, TweenInfo.new(0.16), { Position = targetPos }):Play()
 			TweenService:Create(holder, TweenInfo.new(0.16), { BackgroundColor3 = targetColor }):Play()
+			if not skipCallback and callback then pcall(callback, state) end
 		end
-		update()
+		update(true)
 
 		hit.MouseButton1Click:Connect(function()
 			state = not state
-			update()
-			if callback then pcall(callback, state) end
+			update(false)
 		end)
 
 		return {
 			Holder = holder,
 			Set = function(self, val)
 				state = (val == true)
-				update()
-				if callback then pcall(callback, state) end
+				update(false)
 			end,
 			Get = function() return state end
 		}
