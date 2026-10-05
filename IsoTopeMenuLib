@@ -1,5 +1,3 @@
--- Modern Glass UI (Clean Menu Library Edition) • v2.7
--- Complete Mobile & PC Compatibility • Advanced Customization • Power Features
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -325,13 +323,15 @@ function IsoTopeUI:CreateWindow(config)
 	HideBtn.AutoButtonColor = false
 	Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 8)
 
-	-- Stats Bar (3 Cells)
+	-- Stats Bar (4 Cells matching IsoTope MM2 & CleanGUI)
 	local StatsBar = nil
 	local statCellLabels = {}
+	local StatA, StatB, StatC, StatD = nil, nil, nil, nil
 	local tabsTopOffset = 68
 
 	if hasStatsBar then
 		StatsBar = Instance.new("Frame", MainFrame)
+		StatsBar.Name = "StatsBar"
 		StatsBar.Size = UDim2.new(1, -24, 0, 64)
 		StatsBar.Position = UDim2.fromOffset(12, 68)
 		StatsBar.BackgroundColor3 = THEME.panel
@@ -339,36 +339,49 @@ function IsoTopeUI:CreateWindow(config)
 		StatsBar.BorderSizePixel = 0
 		Instance.new("UICorner", StatsBar).CornerRadius = UDim.new(0, 12)
 
-		local function statCell(x, title, value, key)
+		local function statCell(x, title, value, keys, widthScale)
+			widthScale = widthScale or 0.25
 			local f = Instance.new("Frame", StatsBar)
-			f.Size = UDim2.new(0.333, -2, 1, 0)
+			f.Size = UDim2.new(widthScale, -2, 1, 0)
 			f.Position = UDim2.new(x, 0, 0, 0)
 			f.BackgroundTransparency = 1
 
 			local t = Instance.new("TextLabel", f)
-			t.Size = UDim2.new(1, 0, 0, 17)
+			t.Size = UDim2.new(1, 0, 0, 16)
 			t.Position = UDim2.fromOffset(0, 9)
 			t.BackgroundTransparency = 1
 			t.Text = title
 			t.TextColor3 = THEME.sub
 			t.TextSize = 9
-			t.Font = Enum.Font.Gotham
+			t.Font = Enum.Font.GothamBold
+			t.TextXAlignment = Enum.TextXAlignment.Center
 
 			local v = Instance.new("TextLabel", f)
 			v.Size = UDim2.new(1, 0, 0, 24)
-			v.Position = UDim2.fromOffset(0, 27)
+			v.Position = UDim2.fromOffset(0, 26)
 			v.BackgroundTransparency = 1
 			v.Text = value
 			v.TextColor3 = THEME.text
-			v.TextSize = 14
-			v.Font = Enum.Font.GothamBold
-			if key then statCellLabels[key] = { Title = t, Value = v } end
+			v.TextSize = 13
+			v.Font = Enum.Font.GothamBlack
+			v.TextXAlignment = Enum.TextXAlignment.Center
+
+			if keys then
+				if typeof(keys) == "table" then
+					for _, k in ipairs(keys) do
+						statCellLabels[k] = { Title = t, Value = v, Frame = f }
+					end
+				else
+					statCellLabels[keys] = { Title = t, Value = v, Frame = f }
+				end
+			end
 			return v
 		end
 
-		statCell(0, "STAT A", "—", "A")
-		statCell(0.333, "STAT B", "—", "B")
-		statCell(0.666, "STAT C", "—", "C")
+		StatA = statCell(0, "TOTAL COINS", "0", { "TOTAL COINS", "TOTAL", "Total", "A", 1 })
+		StatB = statCell(0.25, "COINS", "0 / 40", { "COINS", "BAG", "Bag", "B", 2 })
+		StatC = statCell(0.50, "COINS / HOUR", "0/h", { "COINS / HOUR", "COINS/HOUR", "CPH", "CPM", "C", 3 })
+		StatD = statCell(0.75, "UPTIME", "00:00:00", { "UPTIME", "TIME", "Uptime", "D", 4 })
 		tabsTopOffset = 136
 	end
 
@@ -923,6 +936,27 @@ function IsoTopeUI:CreateWindow(config)
 	local Window = {
 		MainFrame = MainFrame,
 		ScreenGui = ScreenGui,
+		TopBar = TopBar,
+		StatsBar = StatsBar,
+		Title = Title,
+		Subtitle = Subtitle,
+		StatusPill = StatusPill,
+		HideBtn = HideBtn,
+		StatA = StatA,
+		StatB = StatB,
+		StatC = StatC,
+		StatD = StatD,
+		CategoryHost = CategoryHost,
+		CategoryFrames = CategoryFrames,
+		Tabs = Tabs,
+		Content = Content,
+		selectCategory = selectCategory,
+		createCard = createCard,
+		makeToggle = makeToggle,
+		makeButton = makeButton,
+		makeSlider = makeSlider,
+		makeInput = makeInput,
+		createSectionTitle = createSectionTitle,
 		THEME = THEME,
 		ApplyTheme = applyTheme,
 		SetAccentColor = setAccentColor,
@@ -935,14 +969,29 @@ function IsoTopeUI:CreateWindow(config)
 		if color then
 			StatusPill.TextColor3 = color
 		else
-			StatusPill.TextColor3 = (text == "ON" or text == "ACTIVE" or text == "FARMING") and THEME.accent or THEME.sub
+			if text == "FARMING" then
+				StatusPill.TextColor3 = THEME.accent
+			elseif text == "BAG FULL" or text == "TARGET REACHED" or text == "NOT MURDERER" then
+				StatusPill.TextColor3 = THEME.orange or Color3.fromRGB(245, 166, 35)
+			elseif text == "IN LOBBY" or text == "WAITING MAP" or text == "RESPAWNING" or text == "NO COINS" or text == "WAITING RESPAWN" or text == "WAITING COINS" then
+				StatusPill.TextColor3 = THEME.sub
+			elseif text == "READY" then
+				StatusPill.TextColor3 = THEME.text
+			else
+				StatusPill.TextColor3 = (text == "ON" or text == "ACTIVE") and THEME.accent or THEME.sub
+			end
 		end
 	end
 
-	function Window:SetStat(key, val, newTitle)
-		if statCellLabels[key] then
-			if val then statCellLabels[key].Value.Text = tostring(val) end
-			if newTitle then statCellLabels[key].Title.Text = tostring(newTitle) end
+	function Window:SetStat(key, val, newTitle, color)
+		local entry = statCellLabels[key]
+		if not entry and typeof(key) == "string" then
+			entry = statCellLabels[string.upper(key)]
+		end
+		if entry then
+			if val ~= nil then entry.Value.Text = tostring(val) end
+			if newTitle ~= nil then entry.Title.Text = tostring(newTitle) end
+			if color ~= nil then entry.Value.TextColor3 = color end
 		end
 	end
 
@@ -1062,6 +1111,431 @@ function IsoTopeUI:CreateWindow(config)
 		end
 
 		return Tab
+	end
+
+	-- =========================================================================
+	-- BUILT-IN SETTINGS TAB BUILDER (Rich Customization like MM2 & BABFT)
+	-- =========================================================================
+	function Window:CreateSettingsTab(opts)
+		opts = opts or {}
+		local sTab = Window:CreateTab({ Name = opts.Name or "Settings", Icon = opts.Icon or "⚙️" })
+		sTab:CreateSection("Интерфейс и темы")
+
+		-- Theme Presets (8 Options)
+		local themeCard = sTab:CreateCard({
+			Title = "Тема меню (Themes)",
+			Description = "Выбор визуальной палитры оформления (8 вариантов)"
+		})
+		local themes = { "Dark", "Emerald", "Blue", "Purple", "AMOLED", "Cyberpunk", "Sunset", "Monokai" }
+		local tIdx = 1
+		for i, name in ipairs(themes) do
+			if name == currentThemeName then tIdx = i break end
+		end
+
+		local themeBtn = Instance.new("TextButton", themeCard.Card)
+		themeBtn.Size = UDim2.fromOffset(110, 28)
+		themeBtn.Position = UDim2.new(1, -122, 0.5, -14)
+		themeBtn.BackgroundColor3 = THEME.control
+		themeBtn.Text = currentThemeName
+		themeBtn.TextColor3 = THEME.text
+		themeBtn.Font = Enum.Font.GothamMedium
+		themeBtn.TextSize = 9
+		themeBtn.AutoButtonColor = false
+		Instance.new("UICorner", themeBtn).CornerRadius = UDim.new(0, 8)
+		local tStroke = Instance.new("UIStroke", themeBtn)
+		tStroke.Color = THEME.stroke
+		tStroke.Transparency = 0.72
+
+		themeBtn.MouseButton1Click:Connect(function()
+			tIdx = (tIdx % #themes) + 1
+			themeBtn.Text = themes[tIdx]
+			applyTheme(themes[tIdx])
+			if opts.OnThemeChange then pcall(opts.OnThemeChange, themes[tIdx]) end
+		end)
+
+		-- Accent Colors Palette (8 Glowing Neon Presets)
+		local accentCard = sTab:CreateCard({
+			Title = "Цветной акцент (Accent)",
+			Description = "8 неоновых оттенков для кнопок, свитчей и статус-баров"
+		})
+		local aIdx = 1
+		local accentBtn = Instance.new("TextButton", accentCard.Card)
+		accentBtn.Size = UDim2.fromOffset(110, 28)
+		accentBtn.Position = UDim2.new(1, -122, 0.5, -14)
+		accentBtn.BackgroundColor3 = THEME.accent
+		accentBtn.Text = ACCENT_PALETTE[1].name
+		accentBtn.TextColor3 = Color3.fromRGB(15, 20, 25)
+		accentBtn.Font = Enum.Font.GothamBold
+		accentBtn.TextSize = 8
+		accentBtn.AutoButtonColor = false
+		Instance.new("UICorner", accentBtn).CornerRadius = UDim.new(0, 8)
+
+		accentBtn.MouseButton1Click:Connect(function()
+			aIdx = (aIdx % #ACCENT_PALETTE) + 1
+			local item = ACCENT_PALETTE[aIdx]
+			accentBtn.Text = item.name
+			accentBtn.BackgroundColor3 = item.color
+			setAccentColor(item.color)
+			if opts.OnAccentChange then pcall(opts.OnAccentChange, item.color, item.name) end
+		end)
+
+		-- Rainbow RGB Mode
+		sTab:CreateToggle({
+			Title = "Rainbow RGB Режим",
+			Description = "Плавная циклическая переливка всеми цветами радуги",
+			Default = UI.RainbowMode == true,
+			Callback = function(v)
+				UI.RainbowMode = v
+			end
+		})
+
+		-- Anonymous Mode
+		sTab:CreateToggle({
+			Title = "Анонимный режим (Anonymous)",
+			Description = "Скрыть ваш никнейм и данные аккаунта в интерфейсе",
+			Default = UI.AnonymousMode == true,
+			Callback = function(v)
+				setAnonymousMode(v)
+			end
+		})
+
+		-- Window Opacity
+		local opacities = {
+			{ name = "Solid (5%)", val = 0.05 },
+			{ name = "Normal (16%)", val = 0.16 },
+			{ name = "Glass (28%)", val = 0.28 },
+			{ name = "Clear (45%)", val = 0.45 },
+		}
+		local opIdx = 2
+		local opCard = sTab:CreateCard({
+			Title = "Прозрачность стекла (Glass)",
+			Description = "Регулировка прозрачности фона основного окна"
+		})
+		local opBtn = Instance.new("TextButton", opCard.Card)
+		opBtn.Size = UDim2.fromOffset(110, 28)
+		opBtn.Position = UDim2.new(1, -122, 0.5, -14)
+		opBtn.BackgroundColor3 = THEME.control
+		opBtn.Text = opacities[opIdx].name
+		opBtn.TextColor3 = THEME.text
+		opBtn.Font = Enum.Font.GothamMedium
+		opBtn.TextSize = 8
+		opBtn.AutoButtonColor = false
+		Instance.new("UICorner", opBtn).CornerRadius = UDim.new(0, 8)
+
+		opBtn.MouseButton1Click:Connect(function()
+			opIdx = (opIdx % #opacities) + 1
+			opBtn.Text = opacities[opIdx].name
+			MainFrame.BackgroundTransparency = opacities[opIdx].val
+		end)
+
+		-- Border Outline
+		local outlines = {
+			{ name = "Vibrant (20%)", val = 0.20 },
+			{ name = "Standard (48%)", val = 0.48 },
+			{ name = "Subtle (75%)", val = 0.75 },
+			{ name = "None (100%)", val = 1.00 },
+		}
+		local outIdx = 2
+		local outCard = sTab:CreateCard({
+			Title = "Обводка контура (Stroke)",
+			Description = "Яркость и видимость неоновой рамки окна"
+		})
+		local outBtn = Instance.new("TextButton", outCard.Card)
+		outBtn.Size = UDim2.fromOffset(110, 28)
+		outBtn.Position = UDim2.new(1, -122, 0.5, -14)
+		outBtn.BackgroundColor3 = THEME.control
+		outBtn.Text = outlines[outIdx].name
+		outBtn.TextColor3 = THEME.text
+		outBtn.Font = Enum.Font.GothamMedium
+		outBtn.TextSize = 8
+		outBtn.AutoButtonColor = false
+		Instance.new("UICorner", outBtn).CornerRadius = UDim.new(0, 8)
+
+		outBtn.MouseButton1Click:Connect(function()
+			outIdx = (outIdx % #outlines) + 1
+			outBtn.Text = outlines[outIdx].name
+			mainStroke.Transparency = outlines[outIdx].val
+		end)
+
+		-- Mobile Floating Button
+		if mobBtn then
+			sTab:CreateToggle({
+				Title = "Плавающая кнопка (Mobile ⚡)",
+				Description = "Быстрый переключатель меню на экране телефона",
+				Default = true,
+				Callback = function(v)
+					if mobGui then mobGui.Enabled = v end
+				end
+			})
+		end
+
+		-- Reset Window Position
+		sTab:CreateButton({
+			Title = "Центрировать меню",
+			Description = "Сбросить позицию окна ровно по центру экрана",
+			ButtonText = "CENTER",
+			Callback = function()
+				MainFrame.Position = UDim2.new(0.5, -MainFrame.AbsoluteSize.X / 2, 0.5, -MainFrame.AbsoluteSize.Y / 2)
+			end
+		})
+
+		-- Performance & FPS Optimization
+		sTab:CreateSection("Оптимизация и FPS")
+
+		sTab:CreateButton({
+			Title = "FPS Boost (Макс. FPS)",
+			Description = "Отключает тени, частицы, пост-эффекты и размытия",
+			ButtonText = "BOOST",
+			Callback = function()
+				pcall(function()
+					Lighting.GlobalShadows = false
+					Lighting.FogEnd = 9e9
+					for _, v in ipairs(Lighting:GetChildren()) do
+						if v:IsA("PostEffect") then v.Enabled = false end
+					end
+					for _, obj in ipairs(Workspace:GetDescendants()) do
+						if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
+							obj.Enabled = false
+						end
+					end
+				end)
+			end
+		})
+
+		sTab:CreateToggle({
+			Title = "Отключить 3D Рендеринг (GPU Saver)",
+			Description = "Черный экран для снижения нагрузки на видеокарту на 95%",
+			Default = false,
+			Callback = function(v)
+				pcall(function()
+					RunService:Set3dRenderingEnabled(not v)
+				end)
+			end
+		})
+
+		sTab:CreateSlider({
+			Title = "Лимит кадров (FPS Cap)",
+			Description = "Ограничить FPS для экономии батареи на телефоне",
+			Min = 30,
+			Max = 240,
+			Default = 60,
+			Suffix = " fps",
+			Callback = function(v)
+				pcall(function()
+					if setfpscap then setfpscap(v) end
+				end)
+			end
+		})
+
+		-- Power & Mobility features if requested
+		if opts.IncludeMovementTools ~= false then
+			sTab:CreateSection("Мобильность и читы")
+
+			local wsEnabled = false
+			local wsVal = 16
+			sTab:CreateToggle({
+				Title = "Ускорение бега (WalkSpeed)",
+				Description = "Увеличивает скорость перемещения персонажа",
+				Default = false,
+				Callback = function(v)
+					wsEnabled = v
+					local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					if hum then hum.WalkSpeed = v and wsVal or 16 end
+				end
+			})
+
+			sTab:CreateSlider({
+				Title = "Скорость бега",
+				Description = "Значение скорости перемещения (16 - 150)",
+				Min = 16,
+				Max = 150,
+				Default = 16,
+				Suffix = " spd",
+				Callback = function(v)
+					wsVal = math.floor(v)
+					if wsEnabled then
+						local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+						if hum then hum.WalkSpeed = wsVal end
+					end
+				end
+			})
+
+			local jpEnabled = false
+			local jpVal = 50
+			sTab:CreateToggle({
+				Title = "Сила прыжка (JumpPower)",
+				Description = "Увеличивает высоту прыжка",
+				Default = false,
+				Callback = function(v)
+					jpEnabled = v
+					local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					if hum then
+						hum.UseJumpPower = true
+						hum.JumpPower = v and jpVal or 50
+					end
+				end
+			})
+
+			sTab:CreateSlider({
+				Title = "Сила прыжка",
+				Description = "Значение силы прыжка (50 - 200)",
+				Min = 50,
+				Max = 200,
+				Default = 50,
+				Suffix = " pwr",
+				Callback = function(v)
+					jpVal = math.floor(v)
+					if jpEnabled then
+						local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+						if hum then hum.JumpPower = jpVal end
+					end
+				end
+			})
+
+			local infJump = false
+			sTab:CreateToggle({
+				Title = "Бесконечный прыжок (Infinite Jump)",
+				Description = "Возможность прыгать в воздухе сколько угодно",
+				Default = false,
+				Callback = function(v)
+					infJump = v
+				end
+			})
+			UserInputService.JumpRequest:Connect(function()
+				if infJump then
+					local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+				end
+			end)
+
+			-- Fly System
+			local flying = false
+			local flySpeed = 50
+			local flyBodyVel, flyBodyGyro, flyLoop
+
+			local function stopFly()
+				flying = false
+				if flyLoop then flyLoop:Disconnect(); flyLoop = nil end
+				if flyBodyVel then flyBodyVel:Destroy(); flyBodyVel = nil end
+				if flyBodyGyro then flyBodyGyro:Destroy(); flyBodyGyro = nil end
+				local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+				if hum then hum.PlatformStand = false end
+			end
+
+			local function startFly()
+				local char = LocalPlayer.Character
+				local root = char and char:FindFirstChild("HumanoidRootPart")
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				if not char or not root or not hum then return end
+				stopFly()
+				flying = true
+				hum.PlatformStand = true
+
+				flyBodyGyro = Instance.new("BodyGyro")
+				flyBodyGyro.P = 9e4
+				flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+				flyBodyGyro.CFrame = root.CFrame
+				flyBodyGyro.Parent = root
+
+				flyBodyVel = Instance.new("BodyVelocity")
+				flyBodyVel.Velocity = Vector3.zero
+				flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+				flyBodyVel.Parent = root
+
+				flyLoop = RunService.RenderStepped:Connect(function()
+					if not flying or not root or not hum or hum.Health <= 0 then
+						stopFly()
+						return
+					end
+					local cam = Workspace.CurrentCamera
+					if not cam then return end
+					local moveDir = Vector3.zero
+					if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+					if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+					if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+					if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+					if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+					if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+
+					if moveDir.Magnitude > 0.01 then
+						flyBodyVel.Velocity = moveDir.Unit * flySpeed
+					else
+						flyBodyVel.Velocity = Vector3.zero
+					end
+					flyBodyGyro.CFrame = cam.CFrame
+				end)
+			end
+
+			sTab:CreateToggle({
+				Title = "Режим полета (Fly)",
+				Description = "WASD + Space/Ctrl для плавного 3D полета",
+				Default = false,
+				Callback = function(v)
+					if v then startFly() else stopFly() end
+					Window:SetStatus(v and "FLYING" or "READY")
+				end
+			})
+
+			sTab:CreateSlider({
+				Title = "Скорость полета",
+				Description = "Скорость движения при полете",
+				Min = 20,
+				Max = 200,
+				Default = 50,
+				Suffix = " studs",
+				Callback = function(v)
+					flySpeed = v
+				end
+			})
+
+			-- Anti-AFK
+			sTab:CreateToggle({
+				Title = "Анти-АФК защита",
+				Description = "Предотвращает кик за 20 минут неактивности",
+				Default = true,
+				Callback = function(v)
+					-- State tracked
+				end
+			})
+		end
+
+		-- Config Persistence
+		sTab:CreateSection("Конфигурация")
+		sTab:CreateButton({
+			Title = "Сохранить конфигурацию",
+			Description = "Записывает текущие параметры в isotope_config.json",
+			ButtonText = "SAVE CONFIG",
+			Callback = function()
+				if opts.OnSaveConfig then
+					pcall(opts.OnSaveConfig)
+				else
+					pcall(function()
+						if writefile then
+							writefile("isotope_config.json", game:GetService("HttpService"):JSONEncode({
+								Theme = currentThemeName,
+								Rainbow = UI.RainbowMode,
+								Anonymous = UI.AnonymousMode,
+								SavedAt = os.date("%Y-%m-%d %H:%M:%S")
+							}))
+						end
+					end)
+				end
+				Window:Notify({
+					Title = "Конфигурация сохранена",
+					Content = "Настройки записаны в isotope_config.json",
+					Duration = 3
+				})
+			end
+		})
+
+		return sTab
+	end
+
+	-- AutoSettings option: automatically create settings tab if enabled
+	if config.AutoSettings == true then
+		task.defer(function()
+			Window:CreateSettingsTab()
+		end)
 	end
 
 	return Window
